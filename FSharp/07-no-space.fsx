@@ -91,7 +91,6 @@ let rec findBestDirToDelete node =
                            | [] -> None
                            | l -> Some (List.min l)
 
-
     if node.Size = 0 && node.TotalSize >= spaceNeeded
     then match bestFromChildren with
          | None -> Some node.TotalSize
