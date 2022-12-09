@@ -34,24 +34,32 @@ let follow (tx, ty) (hx, hy) =
          let ny = ty + (sign (hy - ty))
          (nx, ny)
 
-let rec moveN dir n tpos hpos visited =
-    let visited = Set.add tpos visited
-    if n = 0
-    then tpos, hpos, visited
-    else let newHpos = move dir hpos
-         moveN dir (n - 1) (follow tpos newHpos) newHpos visited
+let followTail tail hpos =
+    List.scan
+        (fun next current -> follow current next)
+        hpos
+        tail
+    |> List.skip 1
 
-let rec processMotions motions tpos hpos visited =
+let rec moveN dir n tail hpos visited =
+    let visited = Set.add (List.last tail) visited
+    if n = 0
+    then tail, hpos, visited
+    else let newHpos = move dir hpos
+         moveN dir (n - 1) (followTail tail newHpos) newHpos visited
+
+let rec processMotions motions tail hpos visited =
     match motions with
     | [] -> visited
-    | (d, s) :: t -> let tpos, hpos, visited = moveN d s tpos hpos visited
+    | (d, s) :: t -> let tpos, hpos, visited = moveN d s tail hpos visited
                      processMotions t tpos hpos visited
 
 let motions = File.ReadAllLines "FSharp/09-rope-bridge-input.txt"
               |> List.ofArray
               |> List.map parseMotion
 
-let visited = processMotions motions (0, 0) (0, 0) Set.empty<int * int>
-let result1 = Set.count visited
-    
+let visited1 = processMotions motions [(0, 0)] (0, 0) Set.empty<int * int>
+let result1 = Set.count visited1
 
+let visited2 = processMotions motions [for _ in 1..9 -> (0, 0)] (0, 0) Set.empty<int * int>
+let result2 = Set.count visited2
