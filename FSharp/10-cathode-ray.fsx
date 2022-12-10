@@ -11,16 +11,24 @@ let parse line =
     | line -> Add (line.Split(' ').[1] |> Int32.Parse)
 
 let calcSignalStrengthSum x cycle signalStrengthSum =
-    // if cycle = 20 || (cycle % 40 = 0 && cycle <= 220)
     if (cycle + 20) % 40 = 0 && cycle <= 220
-    then printfn "Adding to sum, cycle: %d, x: %d" cycle x
-         signalStrengthSum + (x * cycle)
+    then signalStrengthSum + (x * cycle)
     else signalStrengthSum
+
+let drawPixel x cycle =
+    let drawPos = (cycle - 1) % 40
+    let linebreak = if drawPos = 39 then "\n" else ""
+    if abs (x - drawPos) <= 1
+    then printf "#%s" linebreak
+    else printf ".%s" linebreak
 
 let execute op x cycle signalStrengthSum =
     match op with
-    | Noop -> x, (cycle + 1), (calcSignalStrengthSum x cycle signalStrengthSum)
-    | Add y -> let signalStrengthSum = calcSignalStrengthSum x cycle signalStrengthSum
+    | Noop -> drawPixel x cycle
+              x, (cycle + 1), (calcSignalStrengthSum x cycle signalStrengthSum)
+    | Add y -> drawPixel x cycle
+               drawPixel x (cycle + 1)
+               let signalStrengthSum = calcSignalStrengthSum x cycle signalStrengthSum
                x + y, (cycle + 2), (calcSignalStrengthSum x (cycle + 1) signalStrengthSum)
 
 let ops = File.ReadAllLines "FSharp/10-cathode-ray-input.txt" |> List.ofArray |> List.map parse
