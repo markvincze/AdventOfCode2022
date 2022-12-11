@@ -1,6 +1,5 @@
 open System
 open System.IO
-open System.Numerics
 
 type Monkey =
     { Items: int64 list
@@ -27,7 +26,7 @@ let parseMonkey (lines: string list) =
                              | "old" -> (fun x -> x + x)
                              | op2 -> let op2 = Int64.Parse op2
                                       (fun x -> x + op2)
-    
+
     let divisibleTest = ((List.item 3 lines).Split "by ").[1] |> Int64.Parse
     let trueTarget = ((List.item 4 lines).Split "monkey ").[1] |> Int32.Parse
     let falseTarget = ((List.item 5 lines).Split "monkey ").[1] |> Int32.Parse
@@ -66,18 +65,20 @@ let executeRound divideWorry lcd monkeys =
         executeTurn divideWorry lcd i monkeys |> ignore
     monkeys
 
-let rec executeRounds divideWorry lcd n monkeys =
-    if n % 500 = 0 then printfn "%d rounds left" n
-    match n with
-    | 0 -> monkeys
-    | n -> let monkeys = executeRound divideWorry lcd monkeys
-           executeRounds divideWorry lcd (n - 1) monkeys
+let executeRounds divideWorry n monkeys =
+    let rec executeRounds divideWorry lcd n monkeys =
+        if n % 500 = 0 then printfn "%d rounds left" n
+        match n with
+        | 0 -> monkeys
+        | n -> let monkeys = executeRound divideWorry lcd monkeys
+               executeRounds divideWorry lcd (n - 1) monkeys
+
+    let lcd = monkeys |> Array.map (fun m -> m.DivisibleTest) |> Array.reduce (*)
+    executeRounds divideWorry lcd n monkeys
 
 let monkeys1 = parseMonkeys (File.ReadAllLines "FSharp/11-monkey-input.txt" |> List.ofArray) [] |> Array.ofList
 
-let lcd = monkeys1 |> Array.map (fun m -> m.DivisibleTest) |> Array.reduce (*)
-
-let endMonkeys1 = executeRounds true lcd 20 monkeys1
+let endMonkeys1 = executeRounds true 20 monkeys1
 let result1 = endMonkeys1
               |> Array.sortByDescending (fun m -> m.Inspected)
               |> Array.take 2
@@ -86,7 +87,7 @@ let result1 = endMonkeys1
 
 let monkeys2 = parseMonkeys (File.ReadAllLines "FSharp/11-monkey-input.txt" |> List.ofArray) [] |> Array.ofList
 
-let endMonkeys2 = executeRounds false lcd 10000 monkeys2
+let endMonkeys2 = executeRounds false 10000 monkeys2
 let result2 = endMonkeys2
               |> Array.sortByDescending (fun m -> m.Inspected)
               |> Array.take 2
