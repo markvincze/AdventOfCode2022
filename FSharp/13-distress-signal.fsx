@@ -1,4 +1,5 @@
 open System
+open System.IO
 
 type PacketData =
 | Int of int
@@ -6,7 +7,6 @@ type PacketData =
 
 let parseList line =
     let rec parseList (line: string) index acc =
-        printfn "Called with index %d, acc: %A" index acc
         match line.[index + 1] with
         | '[' -> let list, index = parseList line (index + 1) []
                  parseList line (index + 1) (list :: acc)
@@ -24,6 +24,30 @@ type CompareResult = Correct | Incorrect | Equal
 let rec compare a b =
     match a, b with
     | Int a, Int b -> if a < b then Correct else if a = b then Equal else Incorrect
+    | Lst _, Int _ -> compare a (Lst [b])
+    | Int _, Lst _ -> compare (Lst [a]) b
+    | Lst (ha :: ta), Lst (hb :: tb) -> match compare ha hb with
+                                        | Correct -> Correct
+                                        | Incorrect -> Incorrect
+                                        | Equal -> compare (Lst ta) (Lst tb)
+    | Lst [], Lst (_ :: _) -> Correct
+    | Lst (_ :: _), Lst [] -> Incorrect
+    | Lst [], Lst [] -> Equal
 
-// let lst = parseList "[1,1,3,1,1]"
-let lst2 = parseList "[1,[2,[3,[4,[5,6,7]]]],8,9]"
+let parsePair (lines: string list) =
+    let l1 :: (l2 :: _) = lines
+    parseList l1, parseList l2
+
+let parsePairs lines =
+    lines
+    |> List.chunkBySize 3
+    |> List.map parsePair
+
+let result1 = File.ReadAllLines "FSharp/13-distress-signal-input.txt"
+              |> List.ofArray
+              |> parsePairs
+              |> List.indexed
+              |> List.filter (fun (_, (p1, p2)) -> compare p1 p2 = Correct )
+              |> List.map fst
+              |> List.map (fun i -> i + 1)
+              |> List.sum
