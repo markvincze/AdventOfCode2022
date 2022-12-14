@@ -51,3 +51,16 @@ let result1 = File.ReadAllLines "FSharp/13-distress-signal-input.txt"
               |> List.map fst
               |> List.map (fun i -> i + 1)
               |> List.sum
+
+let sorted = File.ReadAllLines "FSharp/13-distress-signal-input.txt"
+             |> List.ofArray
+             |> parsePairs
+             |> List.collect (fun (a, b) -> [a; b])
+             |> List.append [Lst [ Lst [ Int 2 ]]; Lst [ Lst [ Int 6 ]]]
+             |> List.sortWith (fun a b -> match (compare a b) with
+                                          | Correct -> -1
+                                          | Equal -> 0
+                                          | Incorrect -> 1)
+
+let result2 = ((sorted |> List.findIndex (fun p -> p = Lst [ Lst [ Int 2 ]])) + 1) *
+              ((sorted |> List.findIndex (fun p -> p = Lst [ Lst [ Int 6 ]])) + 1)
