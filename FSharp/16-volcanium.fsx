@@ -21,7 +21,7 @@ let rec permute = function
 type Valve = {
     Label: string
     Rate: int
-    IsOpen: bool
+    // IsOpen: bool
     Tunnels: (string * int) list
 }
 
@@ -33,7 +33,7 @@ let parse line =
     {
         Label = matches.Groups.[1].Value
         Rate = matches.Groups.[2].Value |> Int32.Parse
-        IsOpen = false
+        // IsOpen = false
         Tunnels = tunnels |> List.ofArray |> List.map (fun t -> t, 1)
     }
 
@@ -71,31 +71,49 @@ let buildSimplifiedMap valves =
         v.Label, { v with Tunnels = tunnels })
     |> Map.ofList
 
-let rec findBest valves valveLabel visitedWithoutOpen minLeft =
-    if valves |> Map.forall (fun _ v -> v.IsOpen)
+// let rec findBest valves valveLabel valveWithRateCount opened visitedWithoutOpen minLeft =
+let rec findBest valves valveLabel opened minLeft =
+    // if valves |> Map.forall (fun _ v -> v.IsOpen)
+    // if Set.count opened = valveWithRateCount
+    // then 0
+    // else let valve = Map.find valveLabel valves
+    let valve = Map.find valveLabel valves
+    if minLeft <= 1
     then 0
-    else let valve = Map.find valveLabel valves
-         if minLeft <= 1
-         then 0
-         else let moveResults = valve.Tunnels
-                                |> List.filter (fun (v, _) -> Set.contains v visitedWithoutOpen |> not)
-                                // |> List.except visitedWithoutOpen
-                                |> List.map (fun (t, d) -> findBest valves t (Set.add valveLabel visitedWithoutOpen) (minLeft - d))
-              let openAndMoveResults =
-                  if valve.Rate = 0 || valve.IsOpen
-                  then []
-                  else let gainedFlow = valve.Rate * (minLeft - 1)
-                       let newValves = Map.add valve.Label { valve with IsOpen = true } valves
-                       valve.Tunnels
-                       |> List.map (fun (t, d) -> (findBest newValves t Set.empty<string> (minLeft - 1 - d)) + gainedFlow)
-              let results = moveResults |> List.append openAndMoveResults
-              let result = if List.isEmpty results then 0 else List.max results
-            //   let result = moveResults
-            //                |> List.append openAndMoveResults
-            //                |> List.max
-              if minLeft > 20 then printfn "Valve %s, MinLeft: %d, Result: %d" valve.Label minLeft result
-              result
+    else let gainedFlow = valve.Rate * (minLeft - 1)
+         let results = valve.Tunnels
+                       |> List.filter (fun (v, _) -> Set.contains v opened |> not)
+                       |> List.filter (fun (_, d) -> d < minLeft)
+                       |> List.map (fun (t, d) ->
+                          findBest valves t (Set.add valveLabel opened) (minLeft - d - (if gainedFlow > 0 then 1 else 0)))
+         let bestSubResult = if List.isEmpty results then 0 else List.max results
+        //  if minLeft > 20 then printfn "Valve %s, MinLeft: %d, Result: %d" valve.Label minLeft result
+         bestSubResult + gainedFlow
+         
+            //   let moveResults = valve.Tunnels
+            //                     |> List.filter (fun (v, _) -> Set.contains v opened |> not)
+            //                     |> List.filter (fun (v, _) -> Set.contains v visitedWithoutOpen |> not)
+            //                     |> List.map (fun (t, d) -> findBest valves t valveWithRateCount opened (Set.add valveLabel visitedWithoutOpen) (minLeft - d))
+            //   let openAndMoveResults =
+            //     //   if valve.Rate = 0 || valve.IsOpen
+            //       if valve.Rate = 0 || Set.contains valveLabel opened
+            //       then []
+            //       else if Set.count opened = valveWithRateCount - 1
+            //       then [valve.Rate * (minLeft - 1)]
+            //       else let gainedFlow = valve.Rate * (minLeft - 1)
+            //            // let newValves = Map.add valve.Label { valve with IsOpen = true } valves
+            //            let newOpened = Set.add valveLabel opened
+            //            valve.Tunnels
+            //            |> List.filter (fun (v, _) -> Set.contains v opened |> not)
+            //            |> List.map (fun (t, d) -> (findBest valves t valveWithRateCount newOpened Set.empty<string> (minLeft - 1 - d)) + gainedFlow)
+            //   let results = moveResults |> List.append openAndMoveResults
+            //   let result = if List.isEmpty results then 0 else List.max results
+            // //   let result = moveResults
+            // //                |> List.append openAndMoveResults
+            // //                |> List.max
+            //   if minLeft > 20 then printfn "Valve %s, MinLeft: %d, Result: %d" valve.Label minLeft result
+            //   result
 
 let simplifiedValves = (buildSimplifiedMap valves)
 
-// let result1 = findBest simplifiedValves "AA" Set.empty<string> 30
+let result1 = findBest simplifiedValves "AA" Set.empty<string> 30
