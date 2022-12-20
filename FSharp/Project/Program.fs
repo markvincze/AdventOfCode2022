@@ -1,3 +1,6 @@
+﻿// For more information see https://aka.ms/fsharp-console-apps
+printfn "Hello from F#"
+
 open System.Text.RegularExpressions
 open System
 open System.IO
@@ -27,7 +30,7 @@ let parse line =
         Tunnels = tunnels |> List.ofArray |> List.map (fun t -> t, 1)
     }
 
-let valves = File.ReadAllLines "FSharp/16-volcanium-input.txt"
+let valves = File.ReadAllLines "16-volcanium-input.txt"
              |> Array.map parse
              |> Array.map (fun v -> v.Label, v)
              |> Map.ofArray
@@ -72,6 +75,8 @@ let simplifiedValves = (buildSimplifiedMap valves)
 
 let result1 = findBest simplifiedValves "AA" Set.empty<string> 30
 
+printfn "Result 1: %d" result1
+
 let rec findBest2 valves opened target1 target2 minLeft1 minLeft2 totalMinLeft =
     if totalMinLeft <= 1
     then 0
@@ -92,3 +97,5 @@ let rec findBest2 valves opened target1 target2 minLeft1 minLeft2 totalMinLeft =
          bestSubResult + gainedFlow
 
 let result2 = findBest2 simplifiedValves Set.empty<string> "AA" "AA" 0 0 26
+
+printfn "Result 2: %d" result2
