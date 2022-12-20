@@ -2,14 +2,6 @@ open System.Text.RegularExpressions
 open System
 open System.IO
 
-// Alg:
-// Compare these:
-// If opened already:
-//  - Permute links in all possible orders, 
-//  - For all permutations:
-//    - Recursively call the method in every permuted order and sum the results
-//    - 
-
 let rec distribute e = function
   | [] -> [[e]]
   | x::xs' as xs -> (e::xs)::[for xs in distribute e xs' -> x::xs]
@@ -21,32 +13,24 @@ let rec permute = function
 type Valve = {
     Label: string
     Rate: int
-    // IsOpen: bool
-    Tunnels: (string * int) list
+    Tunnels: Map<string, int>
 }
 
-// Valve BB has flow rate=13; tunnels lead to valves CC, AA
 let parse line =
+    // Valve BB has flow rate=13; tunnels lead to valves CC, AA
     let regex = new Regex(@"Valve (\w\w) has flow rate=(\d+); tunnels? leads? to valves? (.*)")
     let matches = regex.Match line
     let tunnels = matches.Groups.[3].Value.Split ", "
     {
         Label = matches.Groups.[1].Value
         Rate = matches.Groups.[2].Value |> Int32.Parse
-        // IsOpen = false
-        Tunnels = tunnels |> List.ofArray |> List.map (fun t -> t, 1)
+        Tunnels = tunnels |> List.ofArray |> List.map (fun t -> t, 1) |> Map.ofList
     }
 
 let valves = File.ReadAllLines "FSharp/16-volcanium-input.txt"
              |> Array.map parse
              |> Array.map (fun v -> v.Label, v)
              |> Map.ofArray
-
-// let startValve = Map.find "AA" valves
-
-// type Step =
-// | Move of string
-// | Open
 
 let findShortestPathLength valves start target = 
     let rec findShortestPathLength valves target queue visited = 
@@ -56,7 +40,7 @@ let findShortestPathLength valves start target =
                             else if h = target then dist
                             else let valve = Map.find h valves
                                  let queue =
-                                    (valve.Tunnels |> List.map (fun (t, _) -> (t, dist + 1)))
+                                    (valve.Tunnels |> Map.keys |> Seq.map (fun t -> (t, dist + 1)) |> List.ofSeq)
                                     |> List.append queue
                                  findShortestPathLength valves target queue (Set.add h visited)
     findShortestPathLength valves target [(start, 0)] Set.empty<string>
@@ -68,52 +52,67 @@ let buildSimplifiedMap valves =
         let tunnels = valvesWithRate
                       |> List.filter (fun v' -> v'.Label <> v.Label)
                       |> List.map (fun v' -> v'.Label, findShortestPathLength valves v.Label v'.Label)
+                      |> Map.ofList
         v.Label, { v with Tunnels = tunnels })
     |> Map.ofList
 
-// let rec findBest valves valveLabel valveWithRateCount opened visitedWithoutOpen minLeft =
 let rec findBest valves valveLabel opened minLeft =
-    // if valves |> Map.forall (fun _ v -> v.IsOpen)
-    // if Set.count opened = valveWithRateCount
-    // then 0
-    // else let valve = Map.find valveLabel valves
     let valve = Map.find valveLabel valves
     if minLeft <= 1
     then 0
     else let gainedFlow = valve.Rate * (minLeft - 1)
          let results = valve.Tunnels
+                       |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
+                       |> List.ofSeq
                        |> List.filter (fun (v, _) -> Set.contains v opened |> not)
                        |> List.filter (fun (_, d) -> d < minLeft)
                        |> List.map (fun (t, d) ->
                           findBest valves t (Set.add valveLabel opened) (minLeft - d - (if gainedFlow > 0 then 1 else 0)))
          let bestSubResult = if List.isEmpty results then 0 else List.max results
-        //  if minLeft > 20 then printfn "Valve %s, MinLeft: %d, Result: %d" valve.Label minLeft result
          bestSubResult + gainedFlow
-         
-            //   let moveResults = valve.Tunnels
-            //                     |> List.filter (fun (v, _) -> Set.contains v opened |> not)
-            //                     |> List.filter (fun (v, _) -> Set.contains v visitedWithoutOpen |> not)
-            //                     |> List.map (fun (t, d) -> findBest valves t valveWithRateCount opened (Set.add valveLabel visitedWithoutOpen) (minLeft - d))
-            //   let openAndMoveResults =
-            //     //   if valve.Rate = 0 || valve.IsOpen
-            //       if valve.Rate = 0 || Set.contains valveLabel opened
-            //       then []
-            //       else if Set.count opened = valveWithRateCount - 1
-            //       then [valve.Rate * (minLeft - 1)]
-            //       else let gainedFlow = valve.Rate * (minLeft - 1)
-            //            // let newValves = Map.add valve.Label { valve with IsOpen = true } valves
-            //            let newOpened = Set.add valveLabel opened
-            //            valve.Tunnels
-            //            |> List.filter (fun (v, _) -> Set.contains v opened |> not)
-            //            |> List.map (fun (t, d) -> (findBest valves t valveWithRateCount newOpened Set.empty<string> (minLeft - 1 - d)) + gainedFlow)
-            //   let results = moveResults |> List.append openAndMoveResults
-            //   let result = if List.isEmpty results then 0 else List.max results
-            // //   let result = moveResults
-            // //                |> List.append openAndMoveResults
-            // //                |> List.max
-            //   if minLeft > 20 then printfn "Valve %s, MinLeft: %d, Result: %d" valve.Label minLeft result
-            //   result
 
 let simplifiedValves = (buildSimplifiedMap valves)
 
+// let rec findBest2 valves valveLabel opened minLeft acc =
+//     let valve = Map.find valveLabel valves
+//     if minLeft <= 1
+//     then acc
+//     else let targetsLeft =
+//              valves
+//              |> Map.filter (fun k v -> v.Label <> valveLabel && v.Rate > 0 && (Set.contains k opened |> not))
+//              |> Map.values
+//          if Seq.isEmpty targetsLeft
+//          then acc
+//          else let nextTarget = targetsLeft
+//                                |> Seq.maxBy (fun v -> (minLeft - valve.Tunnels.[v.Label] - 1) * v.Rate)
+//               let gain = (minLeft - valve.Tunnels.[nextTarget.Label] - 1) * nextTarget.Rate
+//               findBest2 valves nextTarget.Label (Set.add valveLabel opened) (minLeft - valve.Tunnels.[nextTarget.Label] - 1) (acc + gain)
+
 let result1 = findBest simplifiedValves "AA" Set.empty<string> 30
+// let result1_2 = findBest2 simplifiedValves "AA" Set.empty<string> 30 0
+
+
+let rec findBest2 valves opened target1 target2 minLeft1 minLeft2 totalMinLeft =
+    if totalMinLeft <= 1
+    then 0
+    else let target1, target2, minLeft1, minLeft2 =
+            if minLeft1 <= minLeft2
+            then target1, target2, minLeft1, minLeft2
+            else target2, target1, minLeft2, minLeft1
+         let valve = Map.find target1 valves
+         let gainedFlow = valve.Rate * (totalMinLeft - minLeft1)
+         let results =
+             valve.Tunnels
+             |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
+             |> List.ofSeq
+             |> List.filter (fun (v, _) -> v <> target2 && v <> "AA" && (Set.contains v opened |> not))
+             |> List.filter (fun (_, d) -> d < totalMinLeft)
+             |> List.map (fun (t, d) ->
+                 findBest2 valves (Set.add target1 opened) t target2 (d + 1) (minLeft2 - minLeft1) (totalMinLeft - minLeft1))
+         let bestSubResult = if List.isEmpty results
+                             then valves.[target2].Rate * (totalMinLeft - minLeft2)
+                             else List.max results
+         bestSubResult + gainedFlow
+
+let result2 = findBest2 simplifiedValves Set.empty<string> "AA" "AA" 0 0 26
+
