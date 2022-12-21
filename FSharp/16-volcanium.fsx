@@ -19,11 +19,6 @@ let parse line =
         Tunnels = tunnels |> List.ofArray |> List.map (fun t -> t, 1)
     }
 
-let valves = File.ReadAllLines "FSharp/16-volcanium-input.txt"
-             |> Array.map parse
-             |> Array.map (fun v -> v.Label, v)
-             |> Map.ofArray
-
 let findShortestPathLength valves start target = 
     let rec findShortestPathLength valves target queue visited = 
         match queue with
@@ -59,6 +54,11 @@ let rec findBest valves valveLabel opened minLeft =
                           findBest valves t (Set.add valveLabel opened) (minLeft - d - (if gainedFlow > 0 then 1 else 0)))
          let bestSubResult = if List.isEmpty results then 0 else List.max results
          bestSubResult + gainedFlow
+
+let valves = File.ReadAllLines "FSharp/16-volcanium-input.txt"
+             |> Array.map parse
+             |> Array.map (fun v -> v.Label, v)
+             |> Map.ofArray
 
 let simplifiedValves = (buildSimplifiedMap valves)
 
