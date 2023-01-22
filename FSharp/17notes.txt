@@ -1,0 +1,5 @@
+n: 8259, height: 2701, shape: 1,
+n: 6524, height: 5396, shape: 1, steps: 1735, growth: 2695
+n: 4789, height: 8091, shape: 1, steps: 1735, growth: 2695
+n: 3054, height: 10786, shape: 1,
+n: 1319, height: 13481, shape: 1,
