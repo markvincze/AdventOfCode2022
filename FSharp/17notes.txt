@@ -3,3 +3,44 @@ n: 6524, height: 5396, shape: 1, steps: 1735, growth: 2695
 n: 4789, height: 8091, shape: 1, steps: 1735, growth: 2695
 n: 3054, height: 10786, shape: 1,
 n: 1319, height: 13481, shape: 1,
+
+Reached end of jets in dropN, n: 8259, height: 2701, shape: 1
+Reached end of jets in dropN, n: 6524, height: 5396, shape: 1
+Reached end of jets in dropN, n: 4789, height: 8091, shape: 1
+Reached end of jets in dropN, n: 3054, height: 10786, shape: 1
+Reached end of jets in dropN, n: 1319, height: 13481, shape: 1
+
+Reached end of jets in dropN, n: 1741, height: 2701, shape: 1, step growth: 1731, height growth: 2701
+Reached end of jets in dropN, n: 3476, height: 5396, shape: 1, step growth: 1735, height growth: 2695
+Reached end of jets in dropN, n: 5211, height: 8091, shape: 1, step growth: 1735, height growth: 2695
+Reached end of jets in dropN, n: 6946, height: 10786, shape: 1, step growth: 1735, height growth: 2695
+Reached end of jets in dropN, n: 8681, height: 13481, shape: 1, step growth: 1735, height growth: 2695
+
+rocks left after first cycle: 999999998269
+
+height after 1875: 2897
+
+> let rocksLeft = 1000000000000L - 1731L;;
+val rocksLeft: int64 = 999999998269L
+
+> rocksLeft % 1735L;;
+val it: int64 = 144L
+
+> rocksLeft / 1735L;;
+val it: int64 = 576368875L
+
+> let rocksLeft = 1000000000000L - 1741L;;
+val rocksLeft: int64 = 999999998259L
+
+> rocksLeft % 1735L;;
+val it: int64 = 134L
+
+> rocksLeft / 1735L;;
+val it: int64 = 576368875L
+
+Guess:
+1553314121022, too high
+1553314121003L
+1000000001019L
+1553314121019L
+       

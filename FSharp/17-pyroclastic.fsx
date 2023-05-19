@@ -61,40 +61,38 @@ let dropOne chamber jets jetIndex shape dropY =
 
     jetIndex, snd stopPos
 
-let rec dropN chamber (jets: string) jetIndex shape n dropY =
+let mutable lastJet0Step = 0
+let mutable lastJet0Height = 0
+
+let rec dropN chamber (jets: string) jetIndex shape n ncnt dropY =
     if ((jetIndex + 1) % jets.Length) = 0
-        then printfn "Reached end of jets in dropN, n: %d, height: %d, shape: %d" n (height (dropY - 5) chamber) shape
+    then let h = (height (dropY - 5) chamber)
+         printfn "Reached end of jets in dropN, n: %d, height: %d, shape: %d, step growth: %d, height growth: %d" ncnt h shape (ncnt - lastJet0Step) (h - lastJet0Height)
+         lastJet0Step <- ncnt
+         lastJet0Height <- h
 
     match n with
     | 0 -> chamber, dropY
     | n -> let jetIndex, stopY = dropOne chamber jets jetIndex shape dropY
            let nextDropY = (height stopY chamber) + 3
-           dropN chamber jets jetIndex ((shape + 1) % 5) (n - 1) nextDropY
+           dropN chamber jets jetIndex ((shape + 1) % 5) (n - 1) (ncnt + 1) nextDropY
 
-let chamber = Array2D.create 7 100000 false
+let heightAfterN jets n =
+    let afterN, finalDropY = dropN (Array2D.create 7 (n * 5) false) jets 0 0 n 0 3
+    height (finalDropY - 5) afterN
+
 let jets = File.ReadAllText "FSharp/17-pyroclastic-input.txt"
 
-// let after2022, finalDropY = dropN chamber jets 0 0 2022 3
-// let result1 = height (finalDropY - 5) after2022
+let result1 = heightAfterN jets 2022
 
-// let after10000, finalDropY2 = dropN chamber jets 0 0 10000 3
-// let result2 = height (finalDropY2 - 5) after10000
+// Reached end of jets in dropN, n: 1741, height: 2701, shape: 1, step growth: 1741, height growth: 2701
+// Reached end of jets in dropN, n: 3476, height: 5396, shape: 1, step growth: 1735, height growth: 2695
+// Reached end of jets in dropN, n: 5211, height: 8091, shape: 1, step growth: 1735, height growth: 2695
+// Reached end of jets in dropN, n: 6946, height: 10786, shape: 1, step growth: 1735, height growth: 2695
+// Reached end of jets in dropN, n: 8681, height: 13481, shape: 1, step growth: 1735, height growth: 2695
 
-let after140, finalDropY2 = dropN (Array2D.create 7 100000 false) jets 0 0 140 3
-let heightAfter140 = height (finalDropY2 - 5) after140
+let rocksAfterInitialCycle = 1000000000000L - 1741L
+let cycles = rocksAfterInitialCycle / 1735L
+let extraRocks = rocksAfterInitialCycle % 1735L
 
-let after1735, finalDropY1735 = dropN (Array2D.create 7 100000 false) jets 0 0 1735 3
-let heightAfter1735 = height (finalDropY1735 - 5) after1735
-
-let after1875, finalDropY1875 = dropN (Array2D.create 7 100000 false) jets 0 0 1875 3
-let heightAfter1875 = height (finalDropY1875 - 5) after1875
-
-let diff = heightAfter1875 - heightAfter1735
-
-let stepCycle = 1735L
-let growthPerCycle = 2695L
-let totalDrops = 1000000000000L
-let cycles = totalDrops / stepCycle
-let dropsLeft = totalDrops % stepCycle
-
-let fullh = cycles * growthPerCycle + (int64 (heightAfter1875 - heightAfter1735))
+let result2 = ((heightAfterN jets (1741 + (extraRocks |> int))) |> int64) + (cycles * 2695L)
